@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run eslint",
+    "eslint": "eslint 'src/*.js' '*.js'"
   },
   "keywords": [],
   "author": "",
@@ -12,5 +13,11 @@
   "dependencies": {
     "dotenv": "^10.0.0",
     "ldapjs": "^2.3.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.29.0",
+    "@typescript-eslint/parser": "^4.29.0",
+    "eslint": "^7.32.0",
+    "eslint-plugin-editorconfig": "^3.0.2"
   }
 }

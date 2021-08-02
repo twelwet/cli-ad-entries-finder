@@ -1,51 +1,55 @@
 'use strict';
 
-const assert = require('assert');
-const {client, Settings} = require('./service');
+const { client, Settings } = require('./src/service');
+const { showError, saveToFile } = require('./src/utils');
+const getUserAdapter = require('./src/user-adapter');
+const { FILE_NAME } = require('./src/constants');
 
 client.bind(Settings.USERNAME, Settings.PASSWORD, (err) => {
-    assert.ifError(err);
+  if (err) {
+    showError(err);
+  }
 });
 
 client.on('connect', () => {
-    console.log('---');
-    console.log(`Соединение установлено`);
-    console.log(`Сервер: ${Settings.URL}`);
-    console.log(`Пользователь: ${Settings.USERNAME}`);
+  console.log('---');
+  console.log(`Connection established.`);
+  console.log(`Server: ${Settings.URL}`);
+  console.log(`User: ${Settings.USERNAME}`);
 });
 
 const searchOptions = {
-    sizelimit: 2000,
-    scope: 'sub',
-    filter: process.argv[2],
+  scope: 'sub',
+  filter: process.argv[2],
 };
 
 const entries = [];
 
 client.search(Settings.BASE_DN, searchOptions, (err, res) => {
-    assert.ifError(err);
+  if (err) {
+    showError(err);
+  }
 
-    res.on('searchEntry', (entry) => {
-        entries.push(entry);
-        console.log(`${entries.length}. ${entry.object.name} [ ${entry.object.mail === undefined ? 'Почта не заведена' : entry.object.mail} ]`);
-    });
+  res.on('searchEntry', (entry) => {
+    entries.push(JSON.stringify(getUserAdapter(entry.object)));
+    console.table(`${entries.length}. ${entry.object.name} [ ${entry.object.mail === undefined ? 'mail is undefined' : entry.object.mail} ]`);
+  });
 
-    res.on('error', (err) => {
-        console.log('---');
-        console.log(`Найдено записей: ${entries.length}`);
-        console.log('---');
-        console.error('Ошибка: ' + err.message);
-        process.exit(1);
-    });
+  res.on('error', (err) => {
+    showError(err);
+  });
 
-    res.on('end', () => {
-        console.log('---');
-        console.log(`Найдено записей: ${entries.length}`);
-        console.log('---');
-        process.exit(0);
-    })
+  res.on('end', async () => {
+    console.log('---');
+    console.log(`Entries found: ${entries.length}`);
+    console.log('---');
+    console.log(`Saving to file: '${FILE_NAME}'`);
+    await saveToFile(FILE_NAME, entries);
+  });
 });
 
 client.unbind((err) => {
-    assert.ifError(err);
+  if (err) {
+    showError(err);
+  }
 });
